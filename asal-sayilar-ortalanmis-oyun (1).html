@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asal Sayı Avcısı - 6. Sınıf Matematik Oyunu</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: rgba(15, 23, 42, 0.9);
+      border-bottom: 2px solid #334155;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+    }
+    .brand { font-size: 1.3rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .stats { display: flex; gap: 16px; align-items: center; font-size: 1.05rem; font-weight: 700; }
+    .stat-badge { background: #1e293b; padding: 6px 14px; border-radius: 999px; border: 1px solid #475569; }
+    .hearts { color: #f43f5e; letter-spacing: 2px; }
+    #mainStage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+    }
+    .prompt-banner {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+    .prompt-banner strong { color: #38bdf8; text-decoration: underline; }
+    .numbers-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      max-width: 900px;
+      margin-bottom: 30px;
+    }
+    .num-card {
+      width: 100px;
+      height: 100px;
+      border-radius: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.4rem;
+      font-weight: 800;
+      cursor: pointer;
+      border: 3px solid rgba(255, 255, 255, 0.4);
+      background: linear-gradient(135deg, #0284c7, #6366f1);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      transition: all 0.2s;
+      animation: pulseGlow 1.6s infinite ease-in-out;
+    }
+    .num-card:hover { transform: scale(1.12); }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+      50% { transform: scale(1.08); box-shadow: 0 0 35px rgba(168, 85, 247, 0.8), 0 0 50px rgba(56, 189, 248, 0.6); }
+    }
+    .num-card.correct {
+      background: linear-gradient(135deg, #10b981, #059669) !important;
+      border-color: #6ee7b7;
+      animation: none;
+      transform: scale(1.05);
+      cursor: default;
+    }
+    .num-card.wrong {
+      background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+      border-color: #fca5a5;
+      animation: none;
+      opacity: 0.7;
+      cursor: default;
+    }
+    .feedback-banner {
+      background: #0f172a;
+      border: 2px solid #f43f5e;
+      padding: 12px 24px;
+      border-radius: 14px;
+      max-width: 620px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      text-align: center;
+      animation: slideUp 0.3s ease;
+      min-height: 50px;
+    }
+    .feedback-banner.correct { border-color: #10b981; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    .btn {
+      background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 999px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">🚀 Asal Sayı Avcısı (6. Sınıf)</div>
+    <div class="stats">
+      <div class="stat-badge" id="timerBadge">⏱️ Süre: <span id="timerDisplay" style="color: #38bdf8; font-weight: 800;">120</span>s</div>
+      <div class="stat-badge">❤️ Can: <span id="livesDisplay" class="hearts">❤️❤️❤️</span></div>
+      <div class="stat-badge">⭐ Puan: <span id="scoreDisplay">0</span></div>
+      <div class="stat-badge">🎯 Seviye: <span id="levelDisplay">1</span></div>
+      <div class="stat-badge" style="display:flex; align-items:center; gap:6px;">
+        <span>🎵 Ses:</span>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.4" style="width: 70px; cursor: pointer; accent-color: #38bdf8;" oninput="updateMusicVolume(this.value)">
+        <span id="volumeText" style="color: #38bdf8; font-weight: 800; font-size: 0.8rem; width: 34px;">%40</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="mainStage">
+    <div class="prompt-banner">
+      Aşağıdaki sayılardan <strong>ASAL OLANLARA</strong> dokun!
+    </div>
+    <div class="numbers-row" id="numbersRow"></div>
+    <button id="nextRowBtn" class="btn" style="margin-top: 10px; margin-bottom: 16px;" onclick="dealRow()">
+      Yeni Sayılar Getir ➜
+    </button>
+    <div id="feedback" class="feedback-banner" style="display: none;"></div>
+  </div>
+
+  <div id="startModal" class="modal-overlay">
+    <div class="card">
+      <h2 style="font-size: 2rem; color: #38bdf8; margin-bottom: 12px;">Asal Sayı Avcısı</h2>
+      <p style="color: #94a3b8; margin-bottom: 16px;">
+        Ekranın ortasında yanıp sönen sayılardan <strong>SADECE ASAL</strong> olanları bul ve tıkla!
+      </p>
+      <div style="background: #0f172a; padding: 10px 16px; border-radius: 12px; margin-bottom: 20px; font-weight: 700; color: #fde047;">
+        ⏱️ Oyun Süresi: 120 Saniye (Tur aralarında süre dondurulur)
+      </div>
+      <button class="btn" onclick="startSingleGame()">Oyunu Başlat 🚀 (120 Saniye)</button>
+    </div>
+  </div>
+
+  <!-- SÜRE DOLDU MODALI -->
+  <div id="timeUpModal" class="modal-overlay" style="display: none;">
+    <div class="card">
+      <div style="font-size: 3.2rem; margin-bottom: 8px;">⏰</div>
+      <h2 style="font-size: 2.2rem; color: #38bdf8; margin-bottom: 6px;">Süre Doldu!</h2>
+      <p style="color: #94a3b8; margin-bottom: 20px;">120 saniyelik süren sona erdi. İşte başarın:</p>
+
+      <div style="background: rgba(251, 191, 36, 0.12); border: 2px solid rgba(251, 191, 36, 0.4); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
+        <span style="font-size: 0.85rem; color: #fef08a; font-weight: 800; display: block; letter-spacing: 1px; margin-bottom: 4px;">
+          MEVCUT PUANIN
+        </span>
+        <strong id="finalScoreDisplay" style="color: #fbbf24; font-size: 3.2rem; font-family: monospace;">0</strong>
+      </div>
+
+      <button class="btn" onclick="startSingleGame()">Tekrar Oyna 🔄 (Yeni 120 Saniye)</button>
+    </div>
+  </div>
+
+  <script>
+    const PRIMES = new Set([2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97]);
+    const TRAPS = [1,9,15,21,25,27,33,35,49,51,57,63,65,77,81,85,87,91,93,95];
+    const COLORS = [
+      'linear-gradient(135deg, #0284c7, #6366f1)',
+      'linear-gradient(135deg, #ec4899, #8b5cf6)',
+      'linear-gradient(135deg, #10b981, #06b6d4)',
+      'linear-gradient(135deg, #f59e0b, #ef4444)',
+      'linear-gradient(135deg, #8b5cf6, #3b82f6)'
+    ];
+
+    let score = 0, lives = 3, level = 1, gameActive = false;
+    let timeLeft = 120, timerInterval = null, timerFrozen = false;
+    let currentNumbers = [];
+
+    // Web Audio Space Ambient Music Engine
+    let audioCtx = null, bgmGain = null, musicStep = 0, bgmTimer = null, musicVol = 0.4;
+    const SPACE_MELODY = [
+      261.63, 392.00, 329.63, 523.25, 392.00, 329.63, 440.00, 392.00,
+      220.00, 329.63, 440.00, 523.25, 659.25, 523.25, 440.00, 392.00,
+      174.61, 261.63, 349.23, 440.00, 523.25, 440.00, 392.00, 329.63,
+      196.00, 293.66, 392.00, 493.88, 587.33, 493.88, 392.00, 293.66
+    ];
+    const SPACE_PADS = [
+      [130.81, 196.00, 261.63],
+      [110.00, 164.81, 220.00],
+      [87.31, 130.81, 174.61],
+      [98.00, 146.83, 196.00]
+    ];
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        bgmGain = audioCtx.createGain();
+        bgmGain.gain.setValueAtTime(musicVol * 0.25, audioCtx.currentTime);
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1400, audioCtx.currentTime);
+        bgmGain.connect(filter);
+        filter.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (!bgmTimer) startMusicLoop();
+    }
+    function updateMusicVolume(val) {
+      musicVol = parseFloat(val);
+      const text = document.getElementById('volumeText');
+      if (text) text.innerText = '%' + Math.round(musicVol * 100);
+      initAudio();
+      if (bgmGain && audioCtx) {
+        bgmGain.gain.setValueAtTime(musicVol * 0.25, audioCtx.currentTime);
+      }
+    }
+    function startMusicLoop() {
+      if (bgmTimer) return;
+      bgmTimer = setInterval(() => {
+        if (!audioCtx || !bgmGain) return;
+        const now = audioCtx.currentTime;
+        if (musicStep % 8 === 0) {
+          const ch = SPACE_PADS[Math.floor(musicStep / 8) % SPACE_PADS.length];
+          ch.forEach(f => {
+            try {
+              const osc = audioCtx.createOscillator();
+              const g = audioCtx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(f, now);
+              g.gain.setValueAtTime(0.0001, now);
+              g.gain.linearRampToValueAtTime(0.03, now + 0.6);
+              g.gain.exponentialRampToValueAtTime(0.0001, now + 2.7);
+              osc.connect(g);
+              g.connect(bgmGain);
+              osc.start(now);
+              osc.stop(now + 2.75);
+            } catch(e){}
+          });
+        }
+        try {
+          const freq = SPACE_MELODY[musicStep];
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.linearRampToValueAtTime(0.05, now + 0.04);
+          g.gain.exponentialRampToValueAtTime(0.0005, now + 0.44);
+          osc.connect(g);
+          g.connect(bgmGain);
+          osc.start(now);
+          osc.stop(now + 0.46);
+        } catch(e){}
+        musicStep = (musicStep + 1) % SPACE_MELODY.length;
+      }, 350);
+    }
+    document.addEventListener('click', initAudio, { once: true });
+
+    const numbersRow = document.getElementById('numbersRow');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const livesDisplay = document.getElementById('livesDisplay');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerBadge = document.getElementById('timerBadge');
+    const feedback = document.getElementById('feedback');
+    const nextRowBtn = document.getElementById('nextRowBtn');
+
+    function isPrimeNum(n) { return PRIMES.has(n); }
+
+    function getReason(n) {
+      if (n === 1) return "1 asal sayı DEĞİLDİR! En küçük asal sayı 2'dir.";
+      if (n === 91) return "91 asal DEĞİLDİR! Tuzak: 7 × 13 = 91.";
+      if (n === 51) return "51 asal DEĞİLDİR! Rakamlar toplamı 5+1=6 (3'e bölünür: 3 × 17).";
+      if (n === 57) return "57 asal DEĞİLDİR! 5+7=12 (3 × 19 = 57).";
+      if (n === 87) return "87 asal DEĞİLDİR! 8+7=15 (3 × 29 = 87).";
+      if (n % 2 === 0 && n > 2) return n + " asal değildir! Çift bir sayıdır (2'ye bölünür).";
+      if (n % 3 === 0) return n + " asal değildir! 3'e tam bölünür (" + (n/3) + " × 3).";
+      if (n % 5 === 0) return n + " asal değildir! Sonu " + (n%10) + " olup 5'e tam bölünür.";
+      return n + " asal değildir! 1 ve kendisinden başka bölenleri vardır.";
+    }
+
+    function showTip(text, isCorrect) {
+      feedback.className = 'feedback-banner ' + (isCorrect ? 'correct' : '');
+      feedback.innerHTML = '<strong>' + (isCorrect ? '✨ Tebrikler: ' : '⚠️ Dikkat: ') + '</strong>' + text;
+      feedback.style.display = 'block';
+    }
+
+    function triggerTimeUp() {
+      gameActive = false;
+      clearInterval(timerInterval);
+      document.getElementById('finalScoreDisplay').innerText = score;
+      document.getElementById('timeUpModal').style.display = 'flex';
+    }
+
+    function dealRow() {
+      timerFrozen = false;
+      numbersRow.innerHTML = '';
+      feedback.style.display = 'none';
+      if (nextRowBtn) {
+        nextRowBtn.style.background = 'linear-gradient(135deg, #0ea5e9, #3b82f6)';
+        nextRowBtn.innerText = 'Yeni Sayılar Getir ➜';
+      }
+      if (timerBadge) {
+        timerBadge.style.borderColor = '#475569';
+        timerBadge.innerHTML = '⏱️ Süre: <span id="timerDisplay" style="color: #38bdf8; font-weight: 800;">' + timeLeft + '</span>s';
+      }
+
+      const maxVal = level === 1 ? 30 : (level === 2 ? 60 : 100);
+      const eligiblePrimes = Array.from(PRIMES).filter(p => p <= maxVal);
+      const eligibleTraps = TRAPS.filter(t => t <= maxVal);
+
+      const nums = new Set();
+      while(nums.size < 2) {
+        nums.add(eligiblePrimes[Math.floor(Math.random() * eligiblePrimes.length)]);
+      }
+      while(nums.size < 5) {
+        if(Math.random() < 0.5 && eligibleTraps.length > 0) {
+          nums.add(eligibleTraps[Math.floor(Math.random() * eligibleTraps.length)]);
+        } else {
+          const c = Math.floor(Math.random() * maxVal) + 1;
+          if(!isPrimeNum(c)) nums.add(c);
+        }
+      }
+
+      const arr = Array.from(nums).sort(() => Math.random() - 0.5);
+      currentNumbers = arr;
+
+      arr.forEach((num, idx) => {
+        const card = document.createElement('div');
+        card.className = 'num-card';
+        card.innerText = num;
+        card.style.background = COLORS[idx % COLORS.length];
+
+        card.onclick = function() {
+          if (!gameActive || card.classList.contains('correct') || card.classList.contains('wrong')) return;
+          if (isPrimeNum(num)) {
+            score += 100;
+            scoreDisplay.innerText = score;
+            card.classList.add('correct');
+            if (num === 2) showTip("2 en küçük ve TEK ÇİFT asal sayıdır!", true);
+            else showTip(num + " bir asal sayıdır!", true);
+
+            const allPrimesFound = arr.filter(n => isPrimeNum(n)).every(n => {
+              const cards = document.querySelectorAll('.num-card');
+              for(let c of cards) { if(c.innerText == n && c.classList.contains('correct')) return true; }
+              return false;
+            });
+
+            if (allPrimesFound && nextRowBtn) {
+              timerFrozen = true;
+              if (timerBadge) {
+                timerBadge.style.borderColor = '#0284c7';
+                timerBadge.innerHTML = '⏱️ Süre: <span id="timerDisplay" style="color: #38bdf8; font-weight: 800;">' + timeLeft + '</span>s <span style="font-size:0.75rem; background:#0284c7; color:#fff; padding:2px 6px; border-radius:6px; margin-left:4px;">⏸️ Donduruldu</span>';
+              }
+              nextRowBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+              nextRowBtn.innerText = '🎉 Tebrikler! Yeni Sayılara Geç ➜';
+              showTip("Harika! Bu sıradaki tüm asalları buldun! Süre donduruldu, yeni tura geçmek için butona tıkla.", true);
+            }
+          } else {
+            lives--;
+            livesDisplay.innerHTML = '❤️'.repeat(Math.max(0, lives));
+            card.classList.add('wrong');
+            showTip(getReason(num), false);
+            if (lives <= 0) {
+              gameActive = false;
+              clearInterval(timerInterval);
+              setTimeout(() => {
+                alert('Canların Tükendi! Toplam Puanın: ' + score);
+                document.getElementById('startModal').style.display = 'flex';
+              }, 400);
+            }
+          }
+        };
+        numbersRow.appendChild(card);
+      });
+    }
+
+    function startSingleGame() {
+      initAudio();
+      document.getElementById('startModal').style.display = 'none';
+      document.getElementById('timeUpModal').style.display = 'none';
+      clearInterval(timerInterval);
+      score = 0; lives = 3; level = 1; gameActive = true;
+      timeLeft = 120;
+      timerFrozen = false;
+      scoreDisplay.innerText = 0;
+      levelDisplay.innerText = 1;
+      timerDisplay.innerText = 120;
+      livesDisplay.innerHTML = '❤️❤️❤️';
+
+      timerInterval = setInterval(() => {
+        if (!gameActive || timerFrozen) return;
+        timeLeft--;
+        const curTimer = document.getElementById('timerDisplay');
+        if (curTimer) curTimer.innerText = timeLeft;
+        if (timeLeft <= 15) {
+          timerBadge.style.borderColor = '#f43f5e';
+          if (curTimer) curTimer.style.color = '#f43f5e';
+        } else {
+          timerBadge.style.borderColor = '#475569';
+          if (curTimer) curTimer.style.color = '#38bdf8';
+        }
+
+        if (timeLeft <= 0) {
+          triggerTimeUp();
+        }
+      }, 1000);
+
+      dealRow();
+    }
+  </script>
+</body>
+</html>
